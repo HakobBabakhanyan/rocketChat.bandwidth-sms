@@ -1,0 +1,20 @@
+{
+    "API_KEY_LABEL" : "Api Key",
+    "API_KEY_DESCRIPTION" : "",
+
+    "API_URL_LABEL" : "Api Url",
+    "API_URL_DESCRIPTION" : "",
+
+    "APPLICATION_ID_LABEL" : "Application Id",
+    "APPLICATION_ID_DESCRIPTION" : "",
+
+
+    "NUMBER_LABEL" : "Number",
+    "NUMBER_DESCRIPTION" : "",
+
+    "USER_NAME_LABEL" : "Bot Username",
+    "USER_NAME_DESCRIPTION" : "",
+
+    "DEPARTMENT_LABEL" : "Department",
+    "DEPARTMENT_DESCRIPTION" : ""
+}

@@ -1,0 +1,86 @@
+{
+    "id": "67a4e34b-5c04-4c9c-9358-3d0fd217cefd",
+    "version": "0.0.1",
+    "requiredApiVersion": "^1.19.0",
+    "iconFile": "icon.png",
+    "author": {
+        "name": "Hakob Babakhanyan",
+        "homepage": "http://bluip.com",
+        "support": "https://support.bluip.com"
+    },
+    "name": "Bandwidth SMS",
+    "nameSlug": "bandwidth-sms",
+    "classFile": "BandwidthApp.ts",
+    "description": "An app for intgrate Bandwidth sms service",
+    "implements": [
+        "IPreMessageSentPrevent"
+    ],
+    "permissions": [
+        {
+            "name": "user.read"
+        },
+        {
+            "name": "user.write"
+        },
+        {
+            "name": "room.read"
+        },
+        {
+            "name": "room.write"
+        },
+        {
+            "name": "message.read"
+        },
+        {
+            "name": "message.write"
+        },
+        {
+            "name": "livechat-status.read"
+        },
+        {
+            "name": "livechat-custom-fields.write"
+        },
+        {
+            "name": "livechat-visitor.read"
+        },
+        {
+            "name": "livechat-visitor.write"
+        },
+        {
+            "name": "livechat-message.read"
+        },
+        {
+            "name": "livechat-message.write"
+        },
+        {
+            "name": "livechat-room.read"
+        },
+        {
+            "name": "livechat-room.write"
+        },
+        {
+            "name": "livechat-department.read"
+        },
+        {
+            "name": "livechat-department.write"
+        },
+        {
+            "name": "api"
+        },
+        {
+            "name": "env.read"
+        },
+        {
+            "name": "ui.interact"
+        },
+        {
+            "name": "networking"
+        },
+        {
+            "name": "server-setting.read"
+        },
+        {
+            "name": "server-setting.write"
+        }
+    ]
+}
