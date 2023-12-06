@@ -42,7 +42,7 @@ export class SmsIncoming extends ApiEndpoint {
             const agent = await read.getUserReader().getByUsername(settingsBotUserName?.value)
 
             if (visitor && agent) {
-                const rooms = await this.createOrGetRooms(visitor, agent, read, modify)
+                const rooms = await this.createOrGetRooms(visitor, agent, read, modify, settingsBotDepartmentIdOrName?.value)
                 if (rooms) {
                     // rooms.department = await read.getLivechatReader().getLivechatDepartmentByIdOrName("653adb68731a21a60375d6f4")
                     const messageBuilder = modify.getCreator()
@@ -88,12 +88,13 @@ export class SmsIncoming extends ApiEndpoint {
         return await read.getLivechatReader().getLivechatVisitorByToken(token)
     }
 
-    async createOrGetRooms(visitor: IVisitor, agent: IUser, read: IRead, modify: IModify): Promise<ILivechatRoom | undefined> {
+    async createOrGetRooms(visitor: IVisitor, agent: IUser, read: IRead, modify: IModify, settingsBotDepartmentIdOrName: string): Promise<ILivechatRoom | undefined> {
         const getRooms = await read.getLivechatReader().getLivechatRooms(visitor)
         if (getRooms.length) {
             return getRooms[0]
         }
+        visitor.department = settingsBotDepartmentIdOrName
 
-        return await modify.getCreator().getLivechatCreator().createRoom(visitor, agent)
+        return  await modify.getCreator().getLivechatCreator().createRoom(visitor, agent)
     }
 }
