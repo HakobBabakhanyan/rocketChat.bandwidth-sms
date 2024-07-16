@@ -1,11 +1,10 @@
 import {IHttp, IModify, IPersistence, IRead} from '@rocket.chat/apps-engine/definition/accessors';
 import {ApiEndpoint, IApiEndpointInfo, IApiRequest, IApiResponse} from '@rocket.chat/apps-engine/definition/api';
+import {ILivechatRoom, IVisitor} from '@rocket.chat/apps-engine/definition/livechat';
+import {IUser} from '@rocket.chat/apps-engine/definition/users/IUser';
+import {AppSetting} from '../config/Settings';
+import {GetSettingsById} from '../lib/getSettingsById';
 import {safeJsonParse} from '../lib/safeJsonParse';
-import {ILivechatRoom, IVisitor} from "@rocket.chat/apps-engine/definition/livechat";
-import {IUser} from "@rocket.chat/apps-engine/definition/users/IUser";
-import {AppSetting, settings} from "../config/Settings";
-import {RoomType} from "@rocket.chat/apps-engine/definition/rooms";
-import {GetSettingsById} from "../lib/getSettingsById";
 
 export class SmsIncoming extends ApiEndpoint {
     public path = AppSetting.ENDPOINT_SMS_INCOMING;
@@ -19,45 +18,50 @@ export class SmsIncoming extends ApiEndpoint {
      * @param http
      * @param persis
      */
-    public async post(request: IApiRequest, endpoint: IApiEndpointInfo, read: IRead, modify: IModify, http: IHttp, persis: IPersistence): Promise<IApiResponse> {
+    public async post(
+        request: IApiRequest,
+        endpoint: IApiEndpointInfo,
+        read: IRead,
+        modify: IModify,
+        http: IHttp, persis: IPersistence): Promise<IApiResponse> {
         const {
             messages = [
                 {
-                    from: "",
-                    text: ""
-                }
+                    from: '',
+                    text: '',
+                    owner: '',
+                },
             ],
         } = safeJsonParse(request.content) || {};
-
         const responses = messages.map(async (message: any) => {
-            const token = message.from
-            const text = message.text
-            const settingsBotDepartmentIdOrName = GetSettingsById(AppSetting.DEPARTMENT)
-            const settingsBotUserName = GetSettingsById(AppSetting.USER_NAME)
+            const token = message.from;
+            const text = message.text;
+            const ownerPhone = message.owner;
+            const settingsBotDepartmentIdOrName = GetSettingsById(AppSetting.DEPARTMENT);
+            const settingsBotUserName = GetSettingsById(AppSetting.USER_NAME);
 
+            const visitor = await this.createOrGetVisitor(token, read, modify, settingsBotDepartmentIdOrName?.value);
 
-            const visitor = await this.createOrGetVisitor(token, read, modify, settingsBotDepartmentIdOrName?.value)
-
-
-            const agent = await read.getUserReader().getByUsername(settingsBotUserName?.value)
+            const agent = await read.getUserReader().getByUsername(settingsBotUserName?.value);
 
             if (visitor && agent) {
-                const rooms = await this.createOrGetRooms(visitor, agent, read, modify, settingsBotDepartmentIdOrName?.value)
+                await modify.getUpdater().getLivechatUpdater().setCustomFields(visitor.token, 'owner_phone', ownerPhone, true);
+
+                const rooms = await this.createOrGetRooms(visitor, agent, read, modify, settingsBotDepartmentIdOrName?.value);
                 if (rooms) {
                     // rooms.department = await read.getLivechatReader().getLivechatDepartmentByIdOrName("653adb68731a21a60375d6f4")
                     const messageBuilder = modify.getCreator()
                         .startLivechatMessage()
                         .setText(text)
                         .setRoom(rooms)
-                        .setVisitor(visitor)
+                        .setVisitor(visitor);
                     await modify.getCreator().finish(messageBuilder);
                     return true;
                 }
 
             }
-            return false
-        })
-
+            return false;
+        });
 
         const results = await Promise.all(responses);
         if (results.includes(false)) {
@@ -71,30 +75,35 @@ export class SmsIncoming extends ApiEndpoint {
 
     }
 
-
-    async createOrGetVisitor(token: string, read: IRead, modify: IModify, department: string): Promise<IVisitor | undefined> {
-        const getVisitor = await read.getLivechatReader().getLivechatVisitorByToken(token)
+    public async createOrGetVisitor(token: string, read: IRead, modify: IModify, department: string): Promise<IVisitor | undefined> {
+        const getVisitor = await read.getLivechatReader().getLivechatVisitorByToken(token);
 
         if (getVisitor) {
-            return getVisitor
+
+            return getVisitor;
         }
         await modify.getCreator().getLivechatCreator().createVisitor({
             name: token,
-            token: token,
+            token,
             username: token,
-            department: department
-        })
+            department,
+        });
 
-        return await read.getLivechatReader().getLivechatVisitorByToken(token)
+        return await read.getLivechatReader().getLivechatVisitorByToken(token);
     }
 
-    async createOrGetRooms(visitor: IVisitor, agent: IUser, read: IRead, modify: IModify, settingsBotDepartmentIdOrName: string): Promise<ILivechatRoom | undefined> {
-        const getRooms = await read.getLivechatReader().getLivechatRooms(visitor)
+    public async createOrGetRooms(
+        visitor: IVisitor,
+        agent: IUser,
+        read: IRead,
+        modify: IModify,
+        settingsBotDepartmentIdOrName: string): Promise<ILivechatRoom | undefined> {
+        const getRooms = await read.getLivechatReader().getLivechatRooms(visitor);
         if (getRooms.length) {
-            return getRooms[0]
+            return getRooms[0];
         }
-        visitor.department = settingsBotDepartmentIdOrName
+        visitor.department = settingsBotDepartmentIdOrName;
 
-        return  await modify.getCreator().getLivechatCreator().createRoom(visitor, agent)
+        return  await modify.getCreator().getLivechatCreator().createRoom(visitor, agent);
     }
 }
