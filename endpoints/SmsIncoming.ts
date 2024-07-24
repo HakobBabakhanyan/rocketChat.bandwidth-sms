@@ -33,44 +33,46 @@ export class SmsIncoming extends ApiEndpoint {
                 },
             ],
         } = safeJsonParse(request.content) || {};
-        const responses = messages.map(async (message: any) => {
-            const token = message.from;
-            const text = message.text;
-            const ownerPhone = message.owner;
-            const settingsBotDepartmentIdOrName = GetSettingsById(AppSetting.DEPARTMENT);
-            const settingsBotUserName = GetSettingsById(AppSetting.USER_NAME);
+        try {
+            const responses = messages.map(async (message: any) => {
+                const token = message.from;
+                const text = message.text;
+                const ownerPhone = message.owner;
+                const settingsBotDepartmentIdOrName =  await read.getEnvironmentReader().getSettings().getValueById(AppSetting.DEPARTMENT);
+                const settingsBotUserName = await read.getEnvironmentReader().getSettings().getValueById(AppSetting.USER_NAME);
+                const visitor = await this.createOrGetVisitor(token, read, modify, settingsBotDepartmentIdOrName);
+                const agent = await read.getUserReader().getByUsername(settingsBotUserName);
+                if (visitor && agent) {
+                    await modify.getUpdater().getLivechatUpdater().setCustomFields(visitor.token, 'owner_phone', ownerPhone, true);
 
-            const visitor = await this.createOrGetVisitor(token, read, modify, settingsBotDepartmentIdOrName?.value);
+                    const rooms = await this.createOrGetRooms(visitor, agent, read, modify, settingsBotDepartmentIdOrName);
+                    if (rooms) {
+                        // rooms.department = await read.getLivechatReader().getLivechatDepartmentByIdOrName("653adb68731a21a60375d6f4")
+                        const messageBuilder = modify.getCreator()
+                            .startLivechatMessage()
+                            .setText(text)
+                            .setRoom(rooms)
+                            .setVisitor(visitor);
+                        await modify.getCreator().finish(messageBuilder);
+                        return true;
+                    }
 
-            const agent = await read.getUserReader().getByUsername(settingsBotUserName?.value);
-
-            if (visitor && agent) {
-                await modify.getUpdater().getLivechatUpdater().setCustomFields(visitor.token, 'owner_phone', ownerPhone, true);
-
-                const rooms = await this.createOrGetRooms(visitor, agent, read, modify, settingsBotDepartmentIdOrName?.value);
-                if (rooms) {
-                    // rooms.department = await read.getLivechatReader().getLivechatDepartmentByIdOrName("653adb68731a21a60375d6f4")
-                    const messageBuilder = modify.getCreator()
-                        .startLivechatMessage()
-                        .setText(text)
-                        .setRoom(rooms)
-                        .setVisitor(visitor);
-                    await modify.getCreator().finish(messageBuilder);
-                    return true;
                 }
+                return false;
+            });
 
+            const results = await Promise.all(responses);
+            if (results.includes(false)) {
+                return {
+                    status: 500,
+                    content: results,
+                };
+            } else {
+                return this.success(results);
             }
-            return false;
-        });
-
-        const results = await Promise.all(responses);
-        if (results.includes(false)) {
-            return {
-                status: 500,
-                content: results,
-            };
-        } else {
-            return this.success(results);
+        } catch (e) {
+            console.log(e);
+            return this.success(e);
         }
 
     }
@@ -104,6 +106,6 @@ export class SmsIncoming extends ApiEndpoint {
         }
         visitor.department = settingsBotDepartmentIdOrName;
 
-        return  await modify.getCreator().getLivechatCreator().createRoom(visitor, agent);
+        return await modify.getCreator().getLivechatCreator().createRoom(visitor, agent);
     }
 }

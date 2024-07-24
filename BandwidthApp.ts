@@ -90,18 +90,17 @@ export class BandwidthApp extends App implements IPreMessageSentPrevent {
      */
     public async executePreMessageSentPrevent(message: IMessage, read: IRead, http: IHttp, persistence: IPersistence): Promise<boolean> {
         // @ts-ignore
-        // tslint:disable-next-line:triple-equals
-        if (message.room.displayName && this.getInfo().name == message._ROOM.source.alias) {
+        if (message.room.displayName && this.getInfo().name === message.room?.source?.alias) {
             // @ts-ignore
-            if (message.sender.id !== message._ROOM.visitor.id && typeof message._ROOM?._unmappedProperties_?.closer === 'undefined') {
-                const apiKey = GetSettingsById(AppSetting.API_KEY)?.value;
-                const apiUrl = GetSettingsById(AppSetting.API_URL)?.value;
-                const applicationId = GetSettingsById(AppSetting.APPLICATION_ID)?.value;
+            if (message.sender.id !== message.room.visitor.id && typeof message.room?._unmappedProperties_?.closer === 'undefined') {
+                const apiKey = await read.getEnvironmentReader().getSettings().getValueById(AppSetting.API_KEY);
+                const apiUrl = await read.getEnvironmentReader().getSettings().getValueById(AppSetting.API_URL);
+                const applicationId = await read.getEnvironmentReader().getSettings().getValueById(AppSetting.APPLICATION_ID);
                 // @ts-ignore
                 // tslint:disable-next-line:variable-name
-                const Number = message._ROOM.visitor.livechatData?.owner_phone;
+                const Number = message.room.visitor.livechatData?.owner_phone;
                 // @ts-ignore
-                const to = message._ROOM.visitor.token;
+                const to = message.room.visitor.token;
                 const response = await http.post(apiUrl + '/send-sms', {
                     data: {
                         application_id: applicationId,
@@ -127,9 +126,9 @@ export class BandwidthApp extends App implements IPreMessageSentPrevent {
     private async subscribe() {
         const endpointSmsIncoming = this.getAccessors().providedApiEndpoints.find((item) => item.path === AppSetting.ENDPOINT_SMS_INCOMING);
         const rootUrl = await this.getAccessors().reader.getEnvironmentReader().getEnvironmentVariables().getValueByName('ROOT_URL');
-        const apiKey = GetSettingsById(AppSetting.API_KEY)?.value;
-        const apiUrl = GetSettingsById(AppSetting.API_URL)?.value;
-        const applicationId = GetSettingsById(AppSetting.APPLICATION_ID)?.value;
+        const apiKey = await this.getAccessors().reader.getEnvironmentReader().getSettings().getValueById(AppSetting.API_KEY);
+        const apiUrl = await this.getAccessors().reader.getEnvironmentReader().getSettings().getValueById(AppSetting.API_URL);
+        const applicationId = await this.getAccessors().reader.getEnvironmentReader().getSettings().getValueById(AppSetting.APPLICATION_ID);
         try {
             await this.getAccessors().http.post(apiUrl + '/subscribe', {
                 data: {
@@ -150,9 +149,9 @@ export class BandwidthApp extends App implements IPreMessageSentPrevent {
      * @private
      */
     private async unsubscribe() {
-        const apiKey = GetSettingsById(AppSetting.API_KEY)?.value;
-        const apiUrl = GetSettingsById(AppSetting.API_URL)?.value;
-        const applicationId = GetSettingsById(AppSetting.APPLICATION_ID)?.value;
+        const apiKey = await this.getAccessors().reader.getEnvironmentReader().getSettings().getValueById(AppSetting.API_KEY);
+        const apiUrl =  await this.getAccessors().reader.getEnvironmentReader().getSettings().getValueById(AppSetting.API_URL);
+        const applicationId = await this.getAccessors().reader.getEnvironmentReader().getSettings().getValueById(AppSetting.APPLICATION_ID);
         const endpointSmsIncoming = this.getAccessors().providedApiEndpoints.find((item) => item.path === AppSetting.ENDPOINT_SMS_INCOMING);
         const rootUrl = await this.getAccessors().reader.getEnvironmentReader().getEnvironmentVariables().getValueByName('ROOT_URL');
 
